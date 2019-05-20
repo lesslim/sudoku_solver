@@ -1,0 +1,19 @@
+solve[sudoku_] := 
+ NestWhile[
+  Join @@ Table[
+     Table[ReplacePart[s, #1 -> n], {n, #2}] & @@ 
+      First@SortBy[{#, 
+           Complement[Range@9, s[[First@#]], s[[;; , Last@#]], 
+            Catenate@
+             Extract[Partition[s, {3, 3}], Quotient[#, 3, -2]]]} & /@ 
+         Position[s, 0, {2}], 
+        Length@Last@# &], {s, #}] &, {sudoku}, ! FreeQ[#, 0] &]
+
+Grid[input =
+  {{9, 7, 0, 3, 0, 0, 0, 6, 0}, {0, 6, 0, 7, 5, 0, 0, 0, 0}, {0, 0, 0,
+     0, 0, 8, 0, 5, 0}, {0, 0, 0, 0, 0, 0, 6, 7, 0}, {0, 0, 0, 0, 3, 
+    0, 0, 0, 0}, {0, 5, 3, 9, 0, 0, 2, 0, 0}, {7, 0, 0, 0, 2, 5, 0, 0,
+     0}, {0, 0, 2, 0, 1, 0, 0, 0, 8}, {0, 4, 0, 0, 0, 7, 3, 0, 0}}
+ , Frame -> All]
+
+Grid[ solve[input][[1]], Frame -> All]
