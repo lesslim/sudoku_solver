@@ -1,19 +1,37 @@
-solve[sudoku_] := 
- NestWhile[
-  Join @@ Table[
-     Table[ReplacePart[s, #1 -> n], {n, #2}] & @@ 
-      First@SortBy[{#, 
-           Complement[Range@9, s[[First@#]], s[[;; , Last@#]], 
-            Catenate@
-             Extract[Partition[s, {3, 3}], Quotient[#, 3, -2]]]} & /@ 
-         Position[s, 0, {2}], 
-        Length@Last@# &], {s, #}] &, {sudoku}, ! FreeQ[#, 0] &]
+input = {{1, 4, 4}, {1, 5, 9}, {1, 8, 5}, {2, 1, 6}, {2, 5, 3}, {3, 1,
+     4}, {3, 2, 5}, {3, 4, 6}, {3, 5, 2}, {3, 7, 3}, {3, 9, 7}, {4, 1,
+     5}, {4, 3, 2}, {4, 4, 7}, {4, 7, 9}, {4, 8, 8}, {5, 1, 3}, {5, 3,
+     6}, {5, 7, 2}, {5, 9, 1}, {6, 2, 9}, {6, 3, 1}, {6, 6, 2}, {6, 7,
+     6}, {6, 9, 5}, {7, 1, 2}, {7, 3, 5}, {7, 5, 1}, {7, 6, 4}, {7, 8,
+     3}, {7, 9, 8}, {8, 5, 8}, {8, 9, 9}, {9, 2, 1}, {9, 5, 7}, {9, 6,
+     3}};
 
-Grid[input =
-  {{9, 7, 0, 3, 0, 0, 0, 6, 0}, {0, 6, 0, 7, 5, 0, 0, 0, 0}, {0, 0, 0,
-     0, 0, 8, 0, 5, 0}, {0, 0, 0, 0, 0, 0, 6, 7, 0}, {0, 0, 0, 0, 3, 
-    0, 0, 0, 0}, {0, 5, 3, 9, 0, 0, 2, 0, 0}, {7, 0, 0, 0, 2, 5, 0, 0,
-     0}, {0, 0, 2, 0, 1, 0, 0, 0, 8}, {0, 4, 0, 0, 0, 7, 3, 0, 0}}
- , Frame -> All]
+viewmat = Table["", {9}, {9}];
+Do[viewmat[[input[[i, 1]], input[[i, 2]]]] = 
+  ToString[input[[i, 3]]], {i, Length[input]}]
 
-Grid[ solve[input][[1]], Frame -> All]
+varmat = Table[m[i, j, k], {i, 9}, {j, 9}, {k, 9}];
+
+vars = Flatten[varmat];
+cons1 = (varmat[[Sequence @@ #]] == 1 &) /@ input
+cons2 = Flatten@
+   Table[(Sum[varmat[[i, j, k]], {k, 9}] == 1), {i, 9}, {j, 9}];
+cons3 = Flatten@
+   Table[(Sum[varmat[[i, j, k]], {i, 9}] == 1), {j, 9}, {k, 9}];
+cons4 = Flatten@
+   Table[(Sum[varmat[[i, j, k]], {j, 9}] == 1), {i, 9}, {k, 9}];
+
+sm[di_, dj_] := 
+ Flatten[Table[{i, j}, {i, 1 + 3*(di - 1), 3*di}, {j, 1 + 3*(dj - 1), 
+    3*dj}], 1]
+cons5 = Flatten@
+   Table[(Total[m[Sequence @@ #, k] & /@ sm[i, j]] == 1), {i, 3}, {j, 
+     3}, {k, 9}];
+
+cons6 = Thread[0 <= vars <= 1];
+Length[allcons = Join[cons1, cons2, cons3, cons4, cons5, cons6]]
+AbsoluteTiming[
+ sol = FindMinimum[{0, allcons, Element[vars, Integers]}, vars];]
+resmat = Table[Sum[k*m[i, j, k], {k, 9}], {i, 9}, {j, 9}] /. sol[[2]]
+
+{Grid[viewmat, Frame -> All], Grid[resmat, Frame -> All]}
